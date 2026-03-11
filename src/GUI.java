@@ -44,7 +44,7 @@ public class GUI implements ActionListener {
             for (int j = 0; j < 8; j++){
 
                 JButton button = new JButton("");
-                button.setFont(new Font("Segoe UI Symbol", Font.PLAIN, 30));
+                button.setFont(new Font("Segoe UI Symbol", Font.PLAIN, 39));
                 button.addActionListener(this);
                 buttons[i][j] = button;
 
@@ -101,6 +101,8 @@ public class GUI implements ActionListener {
             if (clicked != null && clicked.getColor() == selected.getColor()) {
                 row1 = row;
                 col1 = col;
+                resetColors();
+                highlightMoves(row, col);
                 return;
             }
             //attempt move

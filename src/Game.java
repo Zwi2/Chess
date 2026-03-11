@@ -2,88 +2,134 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.lang.Math.abs;
-
 public class Game {
 
     Piece[][] board = new Piece[8][8];
 
     public boolean isValid(int row1, int col1, int row2, int col2){
-
-        if (row1 == row2 && col1 == col2) return false;
-
-        Piece from = board[row1][col1];
-        Piece to = board[row2][col2];
-
-        if (from == null) return false; //no piece to move
-
-        if (to != null && from.getColor() == to.getColor()) return false; //capturing and moving to an empty square
-
-//        return rookMove(row1, col1, row2, col2);
-        return switch (from.getType()) {
-            case PAWN -> pawnMove(row1, col1, row2, col2);
-            case ROOK -> rookMove(row1, col1, row2, col2);
-            case BISHOP -> bishopMove(row1, col1, row2, col2);
-            case KNIGHT -> knightMove(row1, col1, row2, col2);
-            case QUEEN -> queenMove(row1, col1, row2, col2);
-            case KING -> kingMove(row1, col1, row2, col2);
-        };
+        return getLegalMoves(row1, col1).contains(new Point(row2, col2));
     }
+
     public List<Point> getLegalMoves(int row, int col) {
-    //This is hour like 10 of working on this and I just found out about points
-        //gonna kms tomorrow
         List<Point> moves = new ArrayList<>();
 
-        for (int row1 = 0; row1 < 8; row1++) {
-            for (int col1 = 0; col1 < 8; col1++) {
-                if (isValid(row, col, row1, col1)) {
-                    moves.add(new Point(row1, col1));
+        Piece piece = board[row][col];
+        if (piece == null) return moves;
+
+        pieceType type = piece.getType();
+        pieceColor color = piece.getColor();
+
+        switch (type) {
+            //the arrays are directions: verticals are flipped since the top left corner is 0,0
+            // {1,0 } = down
+            // {-1, 0} = up
+            // {0, 1} = right
+            //{0, -1} = left
+            case ROOK -> addSlidingMoves(moves, row, col,
+                    new int[][]{{1,0},{-1,0},{0,1},{0,-1}}, color);
+
+            case BISHOP -> addSlidingMoves(moves, row, col,
+                    new int[][]{{1,1},{1,-1},{-1,1},{-1,-1}}, color);
+
+            case QUEEN -> addSlidingMoves(moves, row, col,
+                    new int[][]{
+                            {1,0},{-1,0},{0,1},{0,-1},
+                            {1,1},{1,-1},{-1,1},{-1,-1}
+                    }, color);
+
+            case KNIGHT -> {
+                int[][] jumps = {
+                        {2,1},{2,-1},{-2,1},{-2,-1},
+                        {1,2},{1,-2},{-1,2},{-1,-2}
+                };
+
+                for (int[] j : jumps) {
+                    int r = row + j[0];
+                    int c = col + j[1];
+
+                    if (inBounds(r,c) && (board[r][c] == null || board[r][c].getColor() != color)) {
+                        moves.add(new Point(r,c));
+                    }
+                }
+            }
+
+            case KING -> {
+                for (int r = -1; r <= 1; r++) {
+                    for (int c = -1; c <= 1; c++) {
+
+                        if (r == 0 && c == 0) continue;
+
+                        int nr = row + r;
+                        int nc = col + c;
+
+                        if (inBounds(nr,nc) &&
+                                (board[nr][nc] == null || board[nr][nc].getColor() != color)) {
+                            moves.add(new Point(nr,nc));
+                        }
+                    }
+                }
+            }
+
+            case PAWN -> {
+                int direction = (color == pieceColor.WHITE) ? -1 : 1;
+                int startRow = (color == pieceColor.WHITE) ? 6 : 1;
+
+                int forward = row + direction;
+
+                // single move
+                if (inBounds(forward,col) && board[forward][col] == null) {
+                    moves.add(new Point(forward,col));
+
+                    // double move
+                    if (row == startRow) {
+                        int doubleForward = row + 2*direction;
+                        if (board[doubleForward][col] == null) {
+                            moves.add(new Point(doubleForward,col));
+                        }
+                    }
+                }
+
+                // captures
+                int[] cols = {col-1, col+1};
+                for (int c : cols) {
+                    if (inBounds(forward,c) &&
+                            board[forward][c] != null &&
+                            board[forward][c].getColor() != color) {
+                        moves.add(new Point(forward,c));
+                    }
                 }
             }
         }
 
         return moves;
     }
+    private void addSlidingMoves(List<Point> moves, int row, int col, int[][] directions, pieceColor color) {
+        //all this method does is keep trying to move the piece further into the direction given
+        for (int[] direction : directions) {
+            //this means direction is an array of 2 numbers.
+            // Up until it's invalid, the row1 and col2 values will be increased by the direction vertex, and then the next.
+            int row1 = row + direction[0];
+            int col1 = col + direction[1];
 
-    private boolean knightMove(int row1, int col1, int row2, int col2){
-        return (abs(row2-row1) == 1 && abs(col1-col2) == 2) || (abs(row2-row1) == 2 && abs(col1-col2) == 1);
-    }
-    private boolean rookMove(int row1, int col1, int row2, int col2){
-        return row2 == row1 || col2 == col1;
-    }
-    private boolean kingMove(int row1, int col1, int row2, int col2){
-        return abs(row2-row1) <= 1 && abs(col2-col1) <= 1;
-    }
-    private boolean bishopMove(int row1, int col1, int row2, int col2){
-        return abs(row2-row1) == abs(col2-col1);
-    }
-    private boolean queenMove(int row1, int col1, int row2, int col2){
-        return (abs(row2-row1) == abs(col2-col1)) || (row2 == row1 || col2 == col1);
-    }
-    private boolean pawnMove(int row1, int col1, int row2, int col2){
+            while (inBounds(row1,col1)) {
 
-        int direction = board[row1][col1].getColor() == pieceColor.WHITE ? -1 : 1;
-
-        //double move
-        if(row1 == 1 || row1 == 6){
-            if (col1 == col2 && board[row2][col2] == null){
-                if (board[row1][col1].getColor() == pieceColor.WHITE){
-                    if (row2 == row1 + direction - 1) return true;
+                if (board[row1][col1] == null) {
+                    moves.add(new Point(row1,col1));
+                } else {
+                    if (board[row1][col1].getColor() != color) {
+                        moves.add(new Point(row1,col1));
+                    }
+                    break;
                 }
-                if (row2 == row1 + direction + 1) return true;
+
+                row1 += direction[0];
+                col1 += direction[1];
             }
         }
-        // move forward
-        if (col1 == col2 && board[row2][col2] == null){
-            if (row2 == row1 + direction) return true;
-        }
+    }
 
-        // capture diagonally
-        if (abs(col1 - col2) == 1 && row2 == row1 + direction){
-            return board[row2][col2] != null;
-        }
-
-        return false;
+    private boolean inBounds(int row, int col){
+        return row >= 0 && row < 8 && col >= 0 && col < 8;
     }
 
 

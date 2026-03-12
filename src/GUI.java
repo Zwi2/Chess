@@ -97,7 +97,6 @@ public class GUI implements ActionListener {
         }
         else {
             Piece selected = game.getPiece(row1, col1);
-            //if clicking same color piece = change selection
             if (clicked != null && clicked.getColor() == selected.getColor()) {
                 row1 = row;
                 col1 = col;
@@ -111,7 +110,7 @@ public class GUI implements ActionListener {
                 updateBoard();
                 resetColors();
             }
-
+            resetColors();
             isSelected = false;
         }
     }}

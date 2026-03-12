@@ -6,8 +6,21 @@ public class Game {
 
     Piece[][] board = new Piece[8][8];
 
+    public void switchTurns(){
+        turn = (turn == pieceColor.WHITE) ? pieceColor.BLACK : pieceColor.WHITE;
+    }
+    pieceColor turn = pieceColor.WHITE;
     public boolean isValid(int row1, int col1, int row2, int col2){
-        return getLegalMoves(row1, col1).contains(new Point(row2, col2));
+        Piece piece = board[row1][col1];
+        if (piece.getColor() == turn) {
+            boolean valid = getLegalMoves(row1, col1).contains(new Point(row2, col2));
+            if(valid){
+            switchTurns();
+            }
+            return valid;
+        }
+
+        return false;
     }
 
     public List<Point> getLegalMoves(int row, int col) {

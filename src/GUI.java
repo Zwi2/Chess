@@ -3,6 +3,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.Point;
+import java.util.Arrays;
 import java.util.List;
 
 public class GUI implements ActionListener {
@@ -112,5 +113,9 @@ public class GUI implements ActionListener {
             }
             resetColors();
             isSelected = false;
-        }
+            if(game.endGame() != null){
+            JOptionPane.showMessageDialog(frame,game.endGame());
+        }}
+        System.out.println(Arrays.toString(game.blackKing));
+        System.out.println(Arrays.toString(game.whiteKing));
     }}

@@ -5,6 +5,100 @@ import java.util.List;
 public class Game {
 
     Piece[][] board = new Piece[8][8];
+    public Game() {
+        reset();
+    }
+    //this line begins the wonderful piece of shit king methods
+    int[] blackKing = {0, 4};
+    int[] whiteKing = {7, 4};
+    public boolean isKingInCheck(pieceColor kingColor){
+
+        int kingRow = (kingColor == pieceColor.WHITE) ? whiteKing[0] : blackKing[0];
+        int kingCol = (kingColor == pieceColor.WHITE) ? whiteKing[1] : blackKing[1];
+
+        Point king = new Point(kingRow, kingCol);
+
+        for(int row = 0; row < 8; row++){
+            for(int col = 0; col < 8; col++){
+
+                Piece piece = board[row][col];
+
+                if(piece != null && piece.getColor() != kingColor){
+
+                    if(getLegalMoves(row,col).contains(king)){
+                        return true;
+                    }
+
+                }
+
+            }
+        }
+
+        return false;
+    }
+    public boolean checkMate(pieceColor kingColor){
+        int kingRow = (kingColor == pieceColor.WHITE) ? whiteKing[0] : blackKing[0];
+        int kingCol = (kingColor == pieceColor.WHITE) ? whiteKing[1] : blackKing[1];
+        return isKingInCheck(kingColor) && getSafeMoves(kingRow, kingCol).isEmpty();
+    }
+    public String endGame(){
+        String msg;
+        if(checkMate(pieceColor.WHITE)){
+            msg = "Checkmate!  Black wins!";
+        return msg;
+        }
+        if(checkMate(pieceColor.BLACK)){
+            msg = "Checkmate!  White wins!";
+            return msg;
+        }
+        return null;
+    }
+    private boolean wouldCauseCheck(int row1, int col1, int row2, int col2){
+
+        Piece moving = board[row1][col1];
+        Piece captured = board[row2][col2];
+
+        int oldKingRow = -1;
+        int oldKingCol = -1;
+
+        //temporarily move
+        board[row2][col2] = moving;
+        board[row1][col1] = null;
+
+        //update king position if king moved
+        if(moving.getType() == pieceType.KING){
+
+            if(moving.getColor() == pieceColor.WHITE){
+                oldKingRow = whiteKing[0];
+                oldKingCol = whiteKing[1];
+                whiteKing[0] = row2;
+                whiteKing[1] = col2;
+            } else {
+                oldKingRow = blackKing[0];
+                oldKingCol = blackKing[1];
+                blackKing[0] = row2;
+                blackKing[1] = col2;
+            }
+        }
+
+        boolean check = isKingInCheck(moving.getColor());
+
+        //undo move
+        board[row1][col1] = moving;
+        board[row2][col2] = captured;
+
+        if(moving.getType() == pieceType.KING){
+            if(moving.getColor() == pieceColor.WHITE){
+                whiteKing[0] = oldKingRow;
+                whiteKing[1] = oldKingCol;
+            } else {
+                blackKing[0] = oldKingRow;
+                blackKing[1] = oldKingCol;
+            }
+        }
+
+        return check;
+    }
 
     public void switchTurns(){
         turn = (turn == pieceColor.WHITE) ? pieceColor.BLACK : pieceColor.WHITE;
@@ -13,14 +107,26 @@ public class Game {
     public boolean isValid(int row1, int col1, int row2, int col2){
         Piece piece = board[row1][col1];
         if (piece.getColor() == turn) {
-            boolean valid = getLegalMoves(row1, col1).contains(new Point(row2, col2));
-            if(valid){
-            switchTurns();
-            }
-            return valid;
+
+            return getSafeMoves(row1, col1).contains(new Point(row2, col2));
         }
 
         return false;
+    }
+
+    public List<Point> getSafeMoves(int row, int col){
+
+        List<Point> safeMoves = new ArrayList<>();
+
+        for(Point move : getLegalMoves(row, col)){
+
+            if(!wouldCauseCheck(row, col, move.x, move.y)){
+                safeMoves.add(move);
+            }
+
+        }
+
+        return safeMoves;
     }
 
     public List<Point> getLegalMoves(int row, int col) {
@@ -147,8 +253,21 @@ public class Game {
 
 
     public void move(int row1, int col1, int row2, int col2){
+
+        if(board[row1][col1].getType() == pieceType.KING){
+            if(board[row1][col1].getColor() == pieceColor.WHITE){
+                whiteKing[0] = row2;
+                whiteKing[1] = col2;
+            }
+            else{
+                blackKing[0] = row2;
+                blackKing[1] = col2;
+            }
+        }
         board[row2][col2] = board[row1][col1];
         board[row1][col1] = null;
+        switchTurns();
+
     }
 
     public Piece getPiece(int row, int col){
@@ -160,11 +279,9 @@ public class Game {
         return (piece == null) ? "" : piece.getIcon();
     }
 
-    public Game() {
-        reset();
-    }
-    public void reset(){
 
+    public void reset(){
+        board = new Piece[8][8];
         board[0][0] = new Piece(pieceType.ROOK, pieceColor.BLACK);
         board[0][7] = new Piece(pieceType.ROOK, pieceColor.BLACK);
 

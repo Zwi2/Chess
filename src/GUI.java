@@ -3,14 +3,13 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.Point;
-import java.util.Arrays;
 import java.util.List;
 
 public class GUI implements ActionListener {
 
     public void highlightMoves(int row, int col) {
 
-        List<Point> moves = game.getLegalMoves(row, col);
+        List<Point> moves = game.getSafeMoves(row, col);
 
         for (Point p : moves) {
             buttons[p.x][p.y].setBackground(new Color(130, 200, 130));
@@ -116,6 +115,4 @@ public class GUI implements ActionListener {
             if(game.endGame() != null){
             JOptionPane.showMessageDialog(frame,game.endGame());
         }}
-        System.out.println(Arrays.toString(game.blackKing));
-        System.out.println(Arrays.toString(game.whiteKing));
     }}

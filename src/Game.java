@@ -8,9 +8,13 @@ public class Game {
     public Game() {
         reset();
     }
+    boolean h1rookMoved = false;
+    boolean a1rookMoved = false;
+    boolean h8rookMoved = false;
+    boolean a8rookMoved = false;
     //this line begins the wonderful piece of shit king methods
-    int[] blackKing = {0, 4};
-    int[] whiteKing = {7, 4};
+    int[] blackKing = {0, 4}; boolean blackKingMoved = false;
+    int[] whiteKing = {7, 4}; boolean whiteKingMoved = false;
     public boolean isKingInCheck(pieceColor kingColor){
 
         int kingRow = (kingColor == pieceColor.WHITE) ? whiteKing[0] : blackKing[0];
@@ -100,14 +104,15 @@ public class Game {
         return check;
     }
 
+    //this like concludes the wonderful piece of shit king methods
     public void switchTurns(){
         turn = (turn == pieceColor.WHITE) ? pieceColor.BLACK : pieceColor.WHITE;
     }
     pieceColor turn = pieceColor.WHITE;
     public boolean isValid(int row1, int col1, int row2, int col2){
         Piece piece = board[row1][col1];
-        if (piece.getColor() == turn) {
 
+        if (piece.getColor() == turn) {
             return getSafeMoves(row1, col1).contains(new Point(row2, col2));
         }
 
@@ -184,6 +189,26 @@ public class Game {
                         if (inBounds(nr,nc) &&
                                 (board[nr][nc] == null || board[nr][nc].getColor() != color)) {
                             moves.add(new Point(nr,nc));
+                            //kingside castle
+                            if(color == pieceColor.WHITE && !whiteKingMoved && !h1rookMoved){
+                                if(board[7][1] == null && board[7][2] == null && board[7][3] == null){
+                                    moves.add(new Point(7,2));
+                                }
+                            }
+                            if(color == pieceColor.BLACK && !blackKingMoved && !h8rookMoved){
+                                if(board[0][5] == null && board[0][6] == null){
+                                    moves.add(new Point(0,6));
+                                }
+                            }
+                            //queenside castle
+                            if(color == pieceColor.WHITE && !whiteKingMoved && !h1rookMoved){
+                                if(board[7][1] == null && board[7][2] == null && board[7][3] == null){
+                                    moves.add(new Point(7,2));
+                                }}
+                                if(color == pieceColor.BLACK && !blackKingMoved && !a8rookMoved){
+                                    if(board[0][1] == null && board[0][2] == null && board[0][3] == null){
+                                        moves.add(new Point(0,2));
+                                    }}
                         }
                     }
                 }
@@ -195,11 +220,11 @@ public class Game {
 
                 int forward = row + direction;
 
-                // single move
+                //single move
                 if (inBounds(forward,col) && board[forward][col] == null) {
                     moves.add(new Point(forward,col));
 
-                    // double move
+                    //double move
                     if (row == startRow) {
                         int doubleForward = row + 2*direction;
                         if (board[doubleForward][col] == null) {
@@ -208,7 +233,7 @@ public class Game {
                     }
                 }
 
-                // captures
+                //captures
                 int[] cols = {col-1, col+1};
                 for (int c : cols) {
                     if (inBounds(forward,c) &&
@@ -253,17 +278,63 @@ public class Game {
 
 
     public void move(int row1, int col1, int row2, int col2){
+        //kingside castle
+        if(board[row1][col1].getType() == pieceType.KING && col2 == 6){
+            //move king
+            board[row2][col2] = board[row1][col1];
+            board[row1][col1] = null;
 
+            //move rook
+            board[row1][5] = board[row1][7];
+            board[row1][7] = null;
+
+            switchTurns();
+            return;
+        }
         if(board[row1][col1].getType() == pieceType.KING){
             if(board[row1][col1].getColor() == pieceColor.WHITE){
                 whiteKing[0] = row2;
                 whiteKing[1] = col2;
+                whiteKingMoved = true;
             }
             else{
                 blackKing[0] = row2;
                 blackKing[1] = col2;
+                blackKingMoved = true;
             }
         }
+        if(board[row1][col1].getType() == pieceType.KING && col2 == 2){
+
+            //move king
+            board[row2][col2] = board[row1][col1];
+            board[row1][col1] = null;
+
+            //move rook
+            board[row1][3] = board[row1][0];
+            board[row1][0] = null;
+
+            switchTurns();
+            return;
+        }
+        if(board[row1][col1].getType() == pieceType.KING){
+            if(board[row1][col1].getColor() == pieceColor.WHITE){
+                whiteKing[0] = row2;
+                whiteKing[1] = col2;
+                whiteKingMoved = true;
+            }
+            else{
+                blackKing[0] = row2;
+                blackKing[1] = col2;
+                blackKingMoved = true;
+            }
+        }
+        if(board[row1][col1].getType() == pieceType.ROOK){
+            if(row1 == 7 && col1 == 0){a1rookMoved = true;}
+            else if(row1 == 7 && col1 == 7){h1rookMoved = true;}
+            else if(row1 == 0 && col1 == 0){a8rookMoved = true;}
+            else if(row1 == 0 && col1 == 7){h8rookMoved = true;}
+        }
+
         board[row2][col2] = board[row1][col1];
         board[row1][col1] = null;
         switchTurns();

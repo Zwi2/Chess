@@ -8,6 +8,7 @@ public class Game {
     public Game() {
         reset();
     }
+    Point enPassantPawn = null;
     boolean h1rookMoved = false;
     boolean a1rookMoved = false;
     boolean h8rookMoved = false;
@@ -186,33 +187,36 @@ public class Game {
                         int nr = row + r;
                         int nc = col + c;
 
-                        if (inBounds(nr,nc) &&
+                        if (inBounds(nr, nc) &&
                                 (board[nr][nc] == null || board[nr][nc].getColor() != color)) {
-                            moves.add(new Point(nr,nc));
-                            //kingside castle
-                            if(color == pieceColor.WHITE && !whiteKingMoved && !h1rookMoved){
-                                if(board[7][1] == null && board[7][2] == null && board[7][3] == null){
-                                    moves.add(new Point(7,2));
-                                }
-                            }
-                            if(color == pieceColor.BLACK && !blackKingMoved && !h8rookMoved){
-                                if(board[0][5] == null && board[0][6] == null){
-                                    moves.add(new Point(0,6));
-                                }
-                            }
-                            //queenside castle
-                            if(color == pieceColor.WHITE && !whiteKingMoved && !h1rookMoved){
-                                if(board[7][1] == null && board[7][2] == null && board[7][3] == null){
-                                    moves.add(new Point(7,2));
-                                }}
-                                if(color == pieceColor.BLACK && !blackKingMoved && !a8rookMoved){
-                                    if(board[0][1] == null && board[0][2] == null && board[0][3] == null){
-                                        moves.add(new Point(0,2));
-                                    }}
+                            moves.add(new Point(nr, nc));
                         }
                     }
+
+                    //kingside castle
+                    if (color == pieceColor.WHITE && !whiteKingMoved && !h1rookMoved) {
+                        if (board[7][5] == null && board[7][6] == null) {
+                            moves.add(new Point(7, 6));
+                        }
+                    }
+                    if (color == pieceColor.BLACK && !blackKingMoved && !h8rookMoved) {
+                        if (board[0][5] == null && board[0][6] == null) {
+                            moves.add(new Point(0, 6));
+                        }
+                    }
+                    //queenside castle
+                    if (color == pieceColor.WHITE && !whiteKingMoved && !h1rookMoved) {
+                        if (board[7][1] == null && board[7][2] == null && board[7][3] == null) {
+                            moves.add(new Point(7, 2));
+                        }
+                    }
+                    if (color == pieceColor.BLACK && !blackKingMoved && !a8rookMoved) {
+                        if (board[0][1] == null && board[0][2] == null && board[0][3] == null) {
+                            moves.add(new Point(0, 2));
+                        }
+                    }
+                    }
                 }
-            }
 
             case PAWN -> {
                 int direction = (color == pieceColor.WHITE) ? -1 : 1;
@@ -240,6 +244,14 @@ public class Game {
                             board[forward][c] != null &&
                             board[forward][c].getColor() != color) {
                         moves.add(new Point(forward,c));
+                    }
+                }
+                //en passant
+                if(enPassantPawn != null){
+                    if(row == enPassantPawn.x &&
+                            Math.abs(col - enPassantPawn.y) == 1){
+
+                        moves.add(new Point(row + direction, enPassantPawn.y));
                     }
                 }
             }
@@ -335,8 +347,40 @@ public class Game {
             else if(row1 == 0 && col1 == 7){h8rookMoved = true;}
         }
 
+
+
+
+        if(board[row1][col1].getType() == pieceType.PAWN && Math.abs(row2 - row1) == 2){
+            enPassantPawn = new Point(row2, col2);
+        }
+        //en passant move
+        if(board[row1][col1].getType() == pieceType.PAWN &&
+                enPassantPawn != null &&
+                row1 == enPassantPawn.x &&
+                Math.abs(col1 - enPassantPawn.y) == 1 &&
+                col2 == enPassantPawn.y &&
+                board[row2][col2] == null){
+
+            board[enPassantPawn.x][enPassantPawn.y] = null;
+        }
+        //reset
+        Point newEnPassant = null;
+
+        if(board[row1][col1].getType() == pieceType.PAWN && Math.abs(row2 - row1) == 2){
+            newEnPassant = new Point(row2, col2);
+        }
+        enPassantPawn = newEnPassant;
+
+        //promotion
+        if(board[row1][col1].getType() == pieceType.PAWN){
+            pieceColor color = board[row1][col1].getColor();
+            int promotion = (color == pieceColor.WHITE) ? 0 : 7;
+            if (row2 == promotion){board[row1][col1] = new Piece(pieceType.QUEEN, color);}
+
+        }
         board[row2][col2] = board[row1][col1];
         board[row1][col1] = null;
+
         switchTurns();
 
     }

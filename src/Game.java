@@ -42,9 +42,24 @@ public class Game {
         return false;
     }
     public boolean checkMate(pieceColor kingColor){
-        int kingRow = (kingColor == pieceColor.WHITE) ? whiteKing[0] : blackKing[0];
-        int kingCol = (kingColor == pieceColor.WHITE) ? whiteKing[1] : blackKing[1];
-        return isKingInCheck(kingColor) && getSafeMoves(kingRow, kingCol).isEmpty();
+        if(!isKingInCheck(kingColor)){
+            return false;
+        }
+        for(int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+
+                Piece piece = board[row][col];
+
+                if (piece != null && piece.getColor() == kingColor) {
+
+                    if (!getSafeMoves(row, col).isEmpty()) {
+                        return false; //some move saves the king
+                    }
+                }
+            }
+        }
+        //no moves
+        return true;
     }
     public String endGame(){
         String msg;
